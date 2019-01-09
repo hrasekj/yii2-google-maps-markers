@@ -131,18 +131,6 @@ yii.googleMapManager = (function ($) {
             bindInfoWindow(marker, pub.map, pub.infoWindow, htmlContent);
             pub.markerClusterer.addMarker(marker);
             pub.markers.push(marker);
-            if (pub.nextAddress == pub.geocodeData.length) {
-                if (pub.userOptions.mapOptions.center) {
-                    pub.map.setCenter(pub.mapOptions.center);
-                } else {
-                    google.maps.event.addListenerOnce(pub.map, 'bounds_changed', function () {
-                        if (pub.map.getZoom() > 17) {
-                            pub.map.setZoom(17);
-                        }
-                    });
-                    pub.map.fitBounds(pub.bounds);
-                }
-            }
         }
     };
 
@@ -241,9 +229,26 @@ yii.googleMapManager = (function ($) {
                 pub.nextAddress++;
             }
             else {
-                pub.markersLoaded();
+                markersLoaded();
             }
         }, pub.delay);
+    }
+
+    function markersLoaded() {
+        // fit markers to map bounds
+        if (pub.userOptions.mapOptions.center) {
+            pub.map.setCenter(pub.mapOptions.center);
+        } else {
+            google.maps.event.addListenerOnce(pub.map, 'bounds_changed', function () {
+                if (pub.map.getZoom() > 17) {
+                    pub.map.setZoom(17);
+                }
+            });
+            pub.map.fitBounds(pub.bounds);
+        }
+
+        // call user defined callback when markers loaded
+        pub.markersLoaded.call(pub);
     }
 
     return pub;
