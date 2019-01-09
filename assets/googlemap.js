@@ -41,7 +41,7 @@ yii.googleMapManager = (function ($) {
                 pub.geocoder.geocode({'address': search}, function (results, status) {
                     if (status == google.maps.GeocoderStatus.OK) {
                         var place = results[0];
-                        pub.drawMarker(place, htmlContent, icon);
+                        pub.drawMarker(place.geometry.location, htmlContent, icon);
                         pub.delay = 300;
                     }
                     else if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
@@ -63,7 +63,7 @@ yii.googleMapManager = (function ($) {
                 });
             }
             else {
-                pub.drawMarker(search, htmlContent, icon);
+                pub.drawMarker(getLatLngFromString(search), htmlContent, icon);
                 if (typeof callback === 'function') {
                     callback();
                 }
@@ -113,8 +113,15 @@ yii.googleMapManager = (function ($) {
 
             return true;
         },
-        drawMarker: function (place, htmlContent, icon) {
-            var position = pub.updatePosition(place.geometry.location);
+        /**
+         * Draw marker
+         * @param  {google.maps.LatLng} latLng
+         * @param  {string} htmlContent
+         * @param  {string} icon
+         * @return {void}
+         */
+        drawMarker: function (latLng, htmlContent, icon) {
+            var position = pub.updatePosition(latLng);
             pub.bounds.extend(position);
             var marker = new google.maps.Marker({
                 map: pub.map,
@@ -138,6 +145,17 @@ yii.googleMapManager = (function ($) {
             }
         }
     };
+
+    /**
+     * Parse lat long from string.
+     * @see  https://stackoverflow.com/questions/26890514/convert-lat-long-string-into-google-maps-api-latlng-object
+     * @param  {string} str
+     * @return {google.maps.LatLng}
+     */
+    function getLatLngFromString(str) {
+        var latlng = str.split(/, ?/);
+        return new google.maps.LatLng(parseFloat(latlng[0]), parseFloat(latlng[1]));
+    }
 
     /**
      * Setup googleMapManager properties
