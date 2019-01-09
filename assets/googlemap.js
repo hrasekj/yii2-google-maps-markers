@@ -9,7 +9,8 @@ yii.googleMapManager = (function ($) {
         delay: 300,
         bounds: [],
         geocoder: [],
-        markerClusterer: false,
+        markerClusterer: null,
+        markerClustererOptions: {},
         markers: [],
         infoWindow: [],
         infoWindowOptions: [],
@@ -21,22 +22,24 @@ yii.googleMapManager = (function ($) {
         listeners: [],
         renderEmptyMap: true,
         map: null,
+        markersLoaded: function () {
+        },
         init: function () {
         },
         initModule: function (options) {
             initOptions(options).done(function () {
-                google.maps.event.addDomListener(window, 'load', initializeMap());
+                google.maps.event.addDomListener(window, 'load', initializeMap);
             });
         },
         /**
          * Get address and place it on map
          */
-        getAddress: function (location, htmlContent, loadMap) {
+        getAddress: function (location, htmlContent, icon, callback) {
             var search = location.address;
             pub.geocoder.geocode({'address': search}, function (results, status) {
                 if (status == google.maps.GeocoderStatus.OK) {
                     var place = results[0];
-                    pub.drawMarker(place, htmlContent);
+                    pub.drawMarker(place, htmlContent, icon);
                     pub.delay = 300;
                 }
                 else if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
@@ -49,10 +52,12 @@ yii.googleMapManager = (function ($) {
                         pub.nextAddress--;
                         pub.geocodeData[pub.nextAddress].address = pub.geocodeData[pub.nextAddress].country;
                     } else {
-                        pub.drawMarker(pub.mapOptions.center, htmlContent);
+                        pub.drawMarker(pub.mapOptions.center, htmlContent, icon);
                     }
                 }
-                loadMap();
+                if (typeof callback === 'function') {
+                    callback();
+                }
             });
         },
         updatePosition: function (position) {
@@ -99,12 +104,13 @@ yii.googleMapManager = (function ($) {
 
             return true;
         },
-        drawMarker: function (place, htmlContent) {
+        drawMarker: function (place, htmlContent, icon) {
             var position = pub.updatePosition(place.geometry.location);
             pub.bounds.extend(position);
             var marker = new google.maps.Marker({
                 map: pub.map,
-                position: position
+                position: position,
+                icon: icon
             });
             bindInfoWindow(marker, pub.map, pub.infoWindow, htmlContent);
             pub.markerClusterer.addMarker(marker);
@@ -178,11 +184,9 @@ yii.googleMapManager = (function ($) {
         container.style.width = '100%';
         container.style.height = '100%';
         pub.map = new google.maps.Map(container, pub.mapOptions);
-        setTimeout(function () {
-            pub.markerClusterer = new MarkerClusterer(pub.map, [], {gridSize: 50, maxZoom: 17});
-            registerListeners();
-            loadMap();
-        }, 1000);
+        pub.markerClusterer = new MarkerClusterer(pub.map, [], pub.markerClustererOptions);
+        registerListeners();
+        loadMap();
     }
 
     /**
@@ -196,8 +200,12 @@ yii.googleMapManager = (function ($) {
                     address: pub.geocodeData[pub.nextAddress].address
                 };
                 var htmlContent = pub.geocodeData[pub.nextAddress].htmlContent;
-                pub.getAddress(location, htmlContent, loadMap);
+                var icon = pub.geocodeData[pub.nextAddress].icon;
+                pub.getAddress(location, htmlContent, icon, loadMap);
                 pub.nextAddress++;
+            }
+            else {
+                pub.markersLoaded();
             }
         }, pub.delay);
     }

@@ -9,6 +9,7 @@ use yii\helpers\ArrayHelper;
 use yii\helpers\Html;
 use yii\helpers\Json;
 use yii\web\View;
+use yii\web\JsExpression;
 
 /**
  * GoogleMaps displays a set of user addresses as markers on the map.
@@ -71,6 +72,15 @@ class GoogleMaps extends Widget
     public $googleMapsOptions = [];
 
     /**
+     * Marker Cluesterer options
+     *
+     * @see https://developers.google.com/maps/documentation/javascript/marker-clustering
+     *
+     * @var array
+     */
+    public $markerClustererOptions = [];
+
+    /**
      * Example listener for infowindow object:
      *
      * ```php
@@ -95,6 +105,19 @@ class GoogleMaps extends Widget
      * @var array
      */
     public $infoWindowOptions = [];
+
+    /**
+     * Callback function when google map finish markers loading
+     * ```php
+     * [
+     *   'markersLoaded' => (new \yii\web\JsExpression('function() {
+     *          // your custom js code
+     *    }'))
+     * ]
+     * ```
+     * @var JsExpression
+     */
+    public $markersLoaded;
 
     /**
      * @var string google maps container id
@@ -125,6 +148,7 @@ class GoogleMaps extends Widget
         }
 
         $this->googleMapsOptions = $this->getGoogleMapsOptions();
+        $this->markerClustererOptions = $this->getMarkerClustererOptions();
         $this->infoWindowOptions = $this->getInfoWindowOptions();
         $this->googleMapsUrlOptions = $this->getGoogleMapsUrlOptions();
     }
@@ -228,6 +252,23 @@ class GoogleMaps extends Widget
     }
 
     /**
+     * Get MarkerClusterer options
+     *
+     * @return array
+     */
+    protected function getMarkerClustererOptions()
+    {
+        if (isset(Yii::$app->params['markerClustererOptions']) && empty($this->markerClustererOptions)) {
+            $this->markerClustererOptions = Yii::$app->params['markerClustererOptions'];
+        }
+
+        return ArrayHelper::merge([
+            'gridSize' => 50,
+            'maxZoom' => 17,
+        ], $this->markerClustererOptions);
+    }
+
+    /**
      * Get info window options
      *
      * @return array
@@ -258,6 +299,8 @@ class GoogleMaps extends Widget
             'containerId' => $this->containerId,
             'renderEmptyMap' => $this->renderEmptyMap,
             'infoWindowOptions' => $this->infoWindowOptions,
+            'markersLoaded' => $this->markersLoaded,
+            'markerClustererOptions' => $this->markerClustererOptions,
         ]);
     }
 }
