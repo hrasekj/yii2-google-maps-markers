@@ -81,6 +81,13 @@ class GoogleMaps extends Widget
     public $markerClustererOptions = [];
 
     /**
+     * Check marker address with Google Maps geocoder
+     *
+     * @var boolean
+     */
+    public $geocoder = true;
+
+    /**
      * Example listener for infowindow object:
      *
      * ```php
@@ -301,6 +308,7 @@ class GoogleMaps extends Widget
             'infoWindowOptions' => $this->infoWindowOptions,
             'markersLoaded' => $this->markersLoaded,
             'markerClustererOptions' => $this->markerClustererOptions,
+            'geocoder' => (boolean) $this->geocoder,
         ]);
     }
 }

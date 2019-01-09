@@ -36,29 +36,38 @@ yii.googleMapManager = (function ($) {
          */
         getAddress: function (location, htmlContent, icon, callback) {
             var search = location.address;
-            pub.geocoder.geocode({'address': search}, function (results, status) {
-                if (status == google.maps.GeocoderStatus.OK) {
-                    var place = results[0];
-                    pub.drawMarker(place, htmlContent, icon);
-                    pub.delay = 300;
-                }
-                else if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
-                    pub.nextAddress--;
-                    pub.delay = 2000;
-                }
-                else if (status == google.maps.GeocoderStatus.ZERO_RESULTS) {
-                    //If first query return zero results, then set address the value of the country
-                    if (location.address != location.country) {
-                        pub.nextAddress--;
-                        pub.geocodeData[pub.nextAddress].address = pub.geocodeData[pub.nextAddress].country;
-                    } else {
-                        pub.drawMarker(pub.mapOptions.center, htmlContent, icon);
+
+            if (pub.geocoder) {
+                pub.geocoder.geocode({'address': search}, function (results, status) {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                        var place = results[0];
+                        pub.drawMarker(place, htmlContent, icon);
+                        pub.delay = 300;
                     }
-                }
+                    else if (status == google.maps.GeocoderStatus.OVER_QUERY_LIMIT) {
+                        pub.nextAddress--;
+                        pub.delay = 2000;
+                    }
+                    else if (status == google.maps.GeocoderStatus.ZERO_RESULTS) {
+                        //If first query return zero results, then set address the value of the country
+                        if (location.address != location.country) {
+                            pub.nextAddress--;
+                            pub.geocodeData[pub.nextAddress].address = pub.geocodeData[pub.nextAddress].country;
+                        } else {
+                            pub.drawMarker(pub.mapOptions.center, htmlContent, icon);
+                        }
+                    }
+                    if (typeof callback === 'function') {
+                        callback();
+                    }
+                });
+            }
+            else {
+                pub.drawMarker(search, htmlContent, icon);
                 if (typeof callback === 'function') {
                     callback();
                 }
-            });
+            }
         },
         updatePosition: function (position) {
             var coordinates = [position];
@@ -136,7 +145,6 @@ yii.googleMapManager = (function ($) {
     function initOptions(options) {
         var deferred = $.Deferred();
         pub.bounds = new google.maps.LatLngBounds();
-        pub.geocoder = new google.maps.Geocoder();
         pub.infoWindow = new google.maps.InfoWindow(pub.infoWindowOptions);
         pub.map = null;
         pub.markerClusterer = null;
@@ -144,7 +152,17 @@ yii.googleMapManager = (function ($) {
         pub.nextAddress = 0;
         pub.zeroResult = 0;
         pub.markers = [];
+
         pub.userOptions = options;
+
+        if (options.geocoder === false) {
+            pub.geocoder = null;
+            delete options.geocoder;
+        }
+        else {
+            pub.geocoder = new google.maps.Geocoder();
+        }
+
         $.extend(true, pub, options);
         deferred.resolve();
 
